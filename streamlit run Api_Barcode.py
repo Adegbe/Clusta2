@@ -1,1 +1,1 @@
-streamlit run Api_Barcode.py 
+streamlit run Api_Barcode
