@@ -1,40 +1,26 @@
 import streamlit as st
 import requests
 
-st.set_page_config(page_title="Product Barcode Finder", layout="centered")
-st.title("🔍 Product Barcode Finder")
+st.title("Get Product Barcode via UPC Item DB API")
 
-st.write("Enter the product name and brand to retrieve the barcode (UPC/GTIN).")
-
-# User inputs
-product_name = st.text_input("Product Name", placeholder="e.g., Niacinamide Serum")
-brand = st.text_input("Brand Name", placeholder="e.g., The Ordinary")
+product_name = st.text_input("Enter product name (e.g., Niacinamide Serum)")
+brand_name = st.text_input("Enter brand name (e.g., The Ordinary)")
 
 def get_barcode_via_api(product_name, brand):
     url = "https://api.upcitemdb.com/prod/trial/search"
     params = {
-        "s": product_name,
-        "brand": brand
+        "name": product_name,
+        "brand": brand,
+        "category": "skincare"
     }
+    response = requests.get(url, params=params).json()
+    if response.get("code") == "OK" and response.get("items"):
+        return response["items"][0].get("barcode")
+    return None
 
-    try:
-        response = requests.get(url, params=params)
-        response.raise_for_status()
-        data = response.json()
-
-        if data.get("code") == "OK" and data.get("items"):
-            item = data["items"][0]
-            return item.get("gtin") or item.get("upc")
-        else:
-            return "No barcode found for this product."
-    except requests.RequestException as e:
-        return f"Request failed: {e}"
-
-# Trigger search
-if st.button("Get Barcode"):
-    if product_name and brand:
-        with st.spinner("Fetching barcode..."):
-            barcode = get_barcode_via_api(product_name, brand)
-            st.success(f"Barcode: {barcode}")
+if product_name and brand_name:
+    barcode = get_barcode_via_api(product_name, brand_name)
+    if barcode:
+        st.success(f"UPC Barcode: {barcode}")
     else:
-        st.warning("Please enter both product name and brand.")
+        st.error("No barcode found. Try a different name or brand.")
